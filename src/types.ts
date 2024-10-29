@@ -9,6 +9,9 @@ export interface UserInputs {
   preferredElements: string[];
   desiredProfession: string;
   nameInspiration: string;
+  nameLength: 1 | 2;
+  generation: string;
+  mbti: string;
 }
 
 export interface CardConfig {

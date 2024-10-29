@@ -1,10 +1,53 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCcw } from 'lucide-react';
-import NameCard from './components/NameCard';
+import { Sparkles, Copy } from 'lucide-react';
 import UserPreferences from './components/UserPreferences';
-import { generateChineseName, generateNickname, generateEnglishName } from './utils/nameGenerators';
 import { generateAIName } from './utils/aiNameGenerator';
 import { UserInputs } from './types';
+
+interface NameData {
+  formal: string;
+  meaning: string;
+  nickname: string;
+  english: string;
+  origin: {
+    fiveElements: string;
+    allusion: string;
+    implication: string;
+  };
+}
+
+async function getPinyin(text: string, surname: string): Promise<string> {
+  try {
+    const name = text.startsWith(surname) ? text.slice(surname.length) : text;
+    
+    const response = await fetch(`${import.meta.env.VITE_OPENAI_BASE_URL}chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: '你是一个专业的中文拼音转换工具。请返回带声调的拼音，用空格分隔。例如：李明 -> míng'
+          },
+          {
+            role: 'user',
+            content: `请将以下中文名字转换为带声调的拼音：${name}`
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('获取拼音失败:', error);
+    return '';
+  }
+}
 
 function App() {
   const [userInputs, setUserInputs] = useState<UserInputs>({
@@ -15,40 +58,74 @@ function App() {
     motherName: '',
     preferredElements: [],
     desiredProfession: '',
-    nameInspiration: ''
+    nameInspiration: '',
+    nameLength: 2,
+    generation: '',
+    mbti: ''
   });
 
-  const [formalName, setFormalName] = useState(generateChineseName(userInputs));
-  const [nickname, setNickname] = useState(generateNickname(userInputs));
-  const [englishName, setEnglishName] = useState(generateEnglishName(userInputs));
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const regenerateAll = () => {
-    setFormalName(generateChineseName(userInputs));
-    setNickname(generateNickname(userInputs));
-    setEnglishName(generateEnglishName(userInputs));
-    setError(null);
-  };
+  const [aiNames, setAiNames] = useState<NameData[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [pinyinMap, setPinyinMap] = useState<Record<string, string>>({});
 
   const handleInputChange = (newInputs: Partial<UserInputs>) => {
     const updatedInputs = { ...userInputs, ...newInputs };
     setUserInputs(updatedInputs);
-    regenerateAll();
   };
 
   const handleAIGenerate = async () => {
     setIsGenerating(true);
     setError(null);
+    setAiNames([]);
+    setPinyinMap({});
+    setProgress(0);
+
+    const options = {
+      gender: userInputs.gender === 'neutral' ? 'male' : userInputs.gender,
+      surname: userInputs.surname,
+      nameLength: userInputs.nameLength || 2,
+      style: userInputs.nameInspiration || '文雅大方',
+      birthYear: userInputs.birthYear,
+      fatherName: userInputs.fatherName,
+      motherName: userInputs.motherName,
+      preferredElements: userInputs.preferredElements,
+      desiredProfession: userInputs.desiredProfession,
+      generation: userInputs.generation,
+      mbti: userInputs.mbti
+    };
+
+    let generatedCount = 0;
+    const tempNames: NameData[] = [];
+
     try {
-      const aiName = await generateAIName(userInputs);
-      setFormalName(aiName);
+      for await (const nameData of generateAIName(options)) {
+        if (nameData) {
+          generatedCount++;
+          tempNames.push(nameData);
+          
+          setAiNames([...tempNames]);
+          setProgress(generatedCount * 5);
+          
+          const pinyin = await getPinyin(nameData.formal, options.surname);
+          setPinyinMap(prev => ({
+            ...prev,
+            [nameData.formal]: pinyin
+          }));
+        }
+      }
     } catch (error) {
-      setError('AI生成名字失败，已切换到本地生成。');
-      setFormalName(generateChineseName(userInputs));
+      console.error('生成名字时出错:', error);
+      setError('部分名字生成失败，请重试。');
     } finally {
       setIsGenerating(false);
+      setProgress(100);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -84,35 +161,87 @@ function App() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-8 my-12">
-          <NameCard
-            type="formal"
-            name={formalName}
-            surname={userInputs.surname}
-            onRegenerate={() => setFormalName(generateChineseName(userInputs))}
-          />
-          <NameCard
-            type="nickname"
-            name={nickname}
-            onRegenerate={() => setNickname(generateNickname(userInputs))}
-          />
-          <NameCard
-            type="english"
-            name={englishName}
-            onRegenerate={() => setEnglishName(generateEnglishName(userInputs))}
-          />
-        </div>
+        {isGenerating && (
+          <div className="mb-8">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-gray-600">生成进度</span>
+              <span className="text-sm text-gray-600">{progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
 
-        <div className="text-center">
-          <button
-            onClick={regenerateAll}
-            className="bg-gradient-to-r from-teal-500 to-blue-500 text-white px-8 py-3 rounded-full
-              font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto"
-          >
-            <RefreshCcw className="w-5 h-5 mr-2" />
-            重新生成所有名字
-          </button>
-        </div>
+        {aiNames.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              AI 为您推荐的名字
+              {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在生成中...）</span>}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {aiNames.map((nameData, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="p-6">
+                    <div className="flex items-baseline mb-4">
+                      <div className="text-3xl font-bold text-gray-800 text-left">
+                        {nameData.formal}
+                      </div>
+                      <div className="ml-3 text-sm text-gray-400 font-serif italic">
+                        {pinyinMap[nameData.formal]}
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-gray-600 mb-4">
+                      {nameData.meaning}
+                    </div>
+                    
+                    <div className="flex justify-between text-sm mb-4">
+                      <div className="text-gray-500">
+                        <span className="font-medium">小名：</span>
+                        {nameData.nickname}
+                      </div>
+                      <div className="text-gray-500">
+                        <span className="font-medium">英文名：</span>
+                        {nameData.english}
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-gray-100 pt-4 mt-4">
+                      <div className="text-xs text-gray-500 mb-2">
+                        <span className="font-medium">五行运势：</span>
+                        {nameData.origin.fiveElements}
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">
+                        <span className="font-medium">典故：</span>
+                        {nameData.origin.allusion}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        <span className="font-medium">寓意：</span>
+                        {nameData.origin.implication}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => copyToClipboard(nameData.formal)}
+                      className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm text-gray-600 
+                        hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      复制完整名字
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
