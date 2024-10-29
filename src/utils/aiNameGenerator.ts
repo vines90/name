@@ -56,6 +56,9 @@ function isSimilarName(name1: string, name2: string): boolean {
   return commonChars.length > 0;
 }
 
+const API_BASE_URL = 'https://www.DMXapi.com/v1/';
+const API_KEY = 'sk-uolQ9eUX7849ggURAcCf29lCAkglpJO4lzAE4xSgZmppKGzY';
+
 async function generateSingleName(
   options: NameGeneratorOptions, 
   existingNames: string[] = [],
@@ -148,11 +151,11 @@ ${existingNames.length > 0 ?
     try {
       console.log(`尝试生成名字，第 ${attempt + 1} 次尝试`);
       
-      const response = await fetch(`${import.meta.env.VITE_OPENAI_BASE_URL}chat/completions`, {
+      const response = await fetch(`${API_BASE_URL}chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+          'Authorization': `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',

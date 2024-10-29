@@ -16,15 +16,18 @@ interface NameData {
   };
 }
 
+const API_BASE_URL = 'https://www.DMXapi.com/v1/';
+const API_KEY = 'sk-uolQ9eUX7849ggURAcCf29lCAkglpJO4lzAE4xSgZmppKGzY';
+
 async function getPinyin(text: string, surname: string): Promise<string> {
   try {
     const name = text.startsWith(surname) ? text.slice(surname.length) : text;
     
-    const response = await fetch(`${import.meta.env.VITE_OPENAI_BASE_URL}chat/completions`, {
+    const response = await fetch(`${API_BASE_URL}chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+        'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
