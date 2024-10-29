@@ -253,7 +253,7 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({
           `}
         >
           <Wand2 className="w-5 h-5 mr-2" />
-          {isGenerating ? '生成中...' : 'AI智能起名'}
+          {isGenerating ? '生成中...' : '开始创造独特且美好的名字'}
         </button>
         {!userInputs.surname && (
           <p className="mt-2 text-sm text-red-500">请输入姓氏后继续</p>

@@ -164,7 +164,7 @@ function App() {
         {isGenerating && (
           <div className="mb-8">
             <div className="flex justify-between mb-2">
-              <span className="text-sm text-gray-600">生成进度</span>
+              <span className="text-sm text-gray-600">取名进度</span>
               <span className="text-sm text-gray-600">{progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -180,7 +180,7 @@ function App() {
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
               AI 为您推荐的名字
-              {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在生成中...）</span>}
+              {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在取名中...）</span>}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {aiNames.map((nameData, index) => (
