@@ -182,7 +182,7 @@ function App() {
         {aiNames.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              AI 为您推荐的名字
+              即将为您推荐10个名字
               {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在取名中...）</span>}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
