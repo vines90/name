@@ -1,69 +1,59 @@
+/**
+ * 名字生成器的配置选项接口
+ */
 interface NameGeneratorOptions {
-  gender: 'male' | 'female'
-  surname: string
-  nameLength: number
-  style: string
-  birthYear?: number
-  fatherName?: string
-  motherName?: string
-  preferredElements?: string[]
-  desiredProfession?: string
-  generation?: string
-  mbti?: string
+  gender: 'male' | 'female'  // 性别
+  surname: string           // 姓氏
+  nameLength: number        // 名字长度(1或2)
+  style: string            // 名字风格
+  birthYear?: number       // 出生年份
+  fatherName?: string      // 父亲姓名
+  motherName?: string      // 母亲姓名
+  preferredElements?: string[] // 偏好的五行属性
+  desiredProfession?: string  // 期望职业
+  generation?: string      // 字辈要求
+  mbti?: string           // MBTI性格类型
 }
 
+/**
+ * 生成的名字数据结构接口
+ */
 interface NameData {
-  formal: string;
-  meaning: string;
-  nickname: string;
-  english: string;
+  formal: string;          // 正式全名
+  meaning: string;         // 名字含义解释
+  nickname: string;        // 昵称
+  english: string;         // 英文名
   origin: {
-    fiveElements: string;
-    allusion: string;
-    implication: string;
+    fiveElements: string;  // 五行分析
+    allusion: string;      // 相关典故
+    implication: string;   // 深层寓意
   };
 }
 
+/**
+ * AI接口返回数据结构
+ */
 interface AIResponse {
-  names: NameData[];
+  names: NameData[];      // 生成的名字列表
 }
 
-// 添加一个用于检查名字相似度的函数
-function isSimilarName(name1: string, name2: string): boolean {
-  // 移除姓氏后再比较
-  const getName = (fullName: string) => {
-    // 假设第一个字是姓氏
-    return fullName.slice(1);
-  };
-  
-  const firstName = getName(name1);
-  const secondName = getName(name2);
-  
-  // 如果名字完全相同
-  if (firstName === secondName) return true;
-  
-  // 如果名字中有相同的字（只比较名字部分，不比较姓氏）
-  const chars1 = firstName.split('');
-  const chars2 = secondName.split('');
-  
-  // 对于单字名，只有完全相同才算重复
-  if (chars1.length === 1 && chars2.length === 1) {
-    return firstName === secondName;
-  }
-  
-  // 对于双字名，有相同的字才算重复
-  const commonChars = chars1.filter(char => chars2.includes(char));
-  return commonChars.length > 0;
-}
-
+// API配置常量
 const API_BASE_URL = 'https://www.DMXapi.com/v1/';
 const API_KEY = 'sk-uolQ9eUX7849ggURAcCf29lCAkglpJO4lzAE4xSgZmppKGzY';
 
+/**
+ * 生成单个名字
+ * @param options 名字生成配置选项
+ * @param existingNames 已存在的名字列表，用于避免重复
+ * @param retryCount 重试次数
+ * @returns 生成的名字数据，失败返回null
+ */
 async function generateSingleName(
   options: NameGeneratorOptions, 
   existingNames: string[] = [],
   retryCount = 3
 ): Promise<NameData | null> {
+  // 解构配置选项
   const { 
     gender, 
     surname, 
@@ -78,9 +68,16 @@ async function generateSingleName(
     mbti
   } = options;
   
+  // 构建已生成名字的上下文记忆
+  const existingNamesContext = existingNames.length > 0 
+    ? `已经生成过以下名字，请确保新生成的名字与这些名字不重复，且不使用这些名字中的字：
+${existingNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}`
+    : '';
+
+  // 构建AI提示词
   const prompt = `请根据以下详细信息生成一个独特的中文名字：
 
-个人基本信息：
+${existingNamesContext ? existingNamesContext + '\n\n' : ''}个人基本信息：
 - 性别：${gender === 'male' ? '男' : '女'}
 - 姓氏：${surname}（必须使用此姓氏）
 - 出生年份：${birthYear || new Date().getFullYear()}
@@ -95,7 +92,7 @@ async function generateSingleName(
 
 命名要求：
 1. 必须严格使用指定的姓氏"${surname}"
-2. 名字长度必须是${nameLength === 1 ? '一个字' : '两个字'}
+2. 名字长度必须是${nameLength === 1 ? '一个字' : '两个字'}(长度不包含姓氏)
 ${generation ? `3. 必须包含指定的字辈"${generation}"` : ''}
 4. 必须符合${gender === 'male' ? '男孩' : '女孩'}的特点
 5. 需要考虑出生年份${birthYear || new Date().getFullYear()}的时代特点
@@ -104,31 +101,15 @@ ${Array.isArray(preferredElements) && preferredElements.length > 0 ?
 ${desiredProfession ? 
   `7. 名字寓意要与期望职业 ${desiredProfession} 相呼应` : ''}
 ${mbti ? 
-  `8. 名字要体现 ${mbti} 性格特点：
-    - INTJ: 独立理性、战略思维
-    - INTP: 创新思考、逻辑分析
-    - ENTJ: 领导魅力、果断决策
-    - ENTP: 创意无限、思维活跃
-    - INFJ: 洞察人心、理想主义
-    - INFP: 理想主义、重视内在
-    - ENFJ: 感召力强、关怀他人
-    - ENFP: 热情活力、创意无限
-    - ISTJ: 务实可靠、条理分明
-    - ISFJ: 温暖细心、尽职尽责
-    - ESTJ: 执行力强、组织管理
-    - ESFJ: 友善热心、乐于助人
-    - ISTP: 灵活务实、善于解决问题
-    - ISFP: 艺术审美、随和自然
-    - ESTP: 冒险精神、随机应变
-    - ESFP: 活力四射、享受生活` : ''}
+  `8. 名字要体现 ${mbti} 性格特点` : ''}
 9. 整体风格要体现"${style || '文雅大方'}"的特点
 10. 避免生僻字或难读的字
 11. 字形要优美
 12. 名字要朗朗上口
 ${fatherName || motherName ? 
   '13. 可以适当参考父母名字中优美的用字' : ''}
-${existingNames.length > 0 ?
-  `14. 请勿使用以下名字或包含这些名字中的字：${existingNames.join('、')}` : ''}
+14. 严格禁止使用已生成名字中的任何字
+15. 新生成的名字必须与已有名字在含义和写法上有明显区别
 
 请按照以下JSON格式返回（不要包含markdown标记）：
 {
@@ -147,10 +128,12 @@ ${existingNames.length > 0 ?
   ]
 }`
 
+  // 尝试生成名字，最多重试retryCount次
   for (let attempt = 0; attempt < retryCount; attempt++) {
     try {
       console.log(`尝试生成名字，第 ${attempt + 1} 次尝试`);
       
+      // 调用AI API
       const response = await fetch(`${API_BASE_URL}chat/completions`, {
         method: 'POST',
         headers: {
@@ -178,15 +161,18 @@ ${existingNames.length > 0 ?
       const responseText = await response.text();
       console.log('API 响应:', responseText);
 
+      // 检查API响应状态
       if (!response.ok) {
         throw new Error(`API 请求失败: ${response.status}, 响应内容: ${responseText}`);
       }
 
+      // 解析API返回数据
       const data = JSON.parse(responseText);
       const content = data.choices[0]?.message?.content || '';
       console.log('解析后的内容:', content);
       
       try {
+        // 清理返回内容中的markdown标记
         const cleanContent = content
           .replace(/```json\n?/g, '')
           .replace(/```\n?/g, '')
@@ -194,6 +180,7 @@ ${existingNames.length > 0 ?
         
         console.log('清理后的内容:', cleanContent);
         
+        // 解析JSON数据
         const parsedData: AIResponse = JSON.parse(cleanContent);
         if (parsedData.names?.[0]) {
           console.log('成功生成名字:', parsedData.names[0]);
@@ -214,68 +201,61 @@ ${existingNames.length > 0 ?
         console.error('所有重试都失败了，最后的错误:', error);
         return null;
       }
+      // 失败后等待一段时间再重试，时间随重试次数增加
       await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
     }
   }
   return null;
 }
 
+/**
+ * 生成多个AI名字的异步生成器函数
+ * @param options 名字生成配置选项
+ * @yields 生成的名字数据
+ */
 export async function* generateAIName(options: NameGeneratorOptions): AsyncGenerator<NameData | null, void, unknown> {
-  const totalNames = 20;
-  const failedAttempts: number[] = [];
-  let successCount = 0;
-  const generatedNames: string[] = [];
+  const totalNames = 10; // 要生成的总名字数量
+  const failedAttempts: number[] = []; // 记录失败的尝试
+  let successCount = 0; // 成功生成的名字计数
+  const generatedNames: string[] = []; // 已生成的名字列表
   
-  for (let i = 0; i < totalNames; i++) {
+  let attemptCount = 0;
+  while (successCount < totalNames && attemptCount < totalNames * 2) { // 添加最大尝试次数限制
+    attemptCount++;
     try {
-      console.log(`开始生成第 ${i + 1} 个名字`);
+      console.log(`开始生成第 ${successCount + 1} 个名字 (尝试次数: ${attemptCount})`);
       const nameData = await generateSingleName(options, generatedNames);
       
       if (nameData) {
-        // 检查是否与已生成的名字重复或相似
-        const isDuplicate = generatedNames.some(existingName => 
-          isSimilarName(nameData.formal, existingName)
-        );
-
-        if (!isDuplicate) {
-          successCount++;
-          generatedNames.push(nameData.formal);
-          console.log(`成功生成第 ${i + 1} 个名字:`, nameData);
-          yield nameData;
-        } else {
-          console.log(`生成的名字 ${nameData.formal} 与已有名字重复，尝试重新生成`);
-          i--; // 重试当前索引
-          continue;
-        }
+        successCount++;
+        generatedNames.push(nameData.formal);
+        console.log(`成功生成第 ${successCount} 个名字:`, nameData);
+        yield nameData;
       } else {
-        failedAttempts.push(i + 1);
-        console.log(`第 ${i + 1} 个名字生成失败，尝试重试`);
+        failedAttempts.push(successCount + 1);
+        console.log(`第 ${successCount + 1} 个名字生成失败，将继续尝试`);
         
-        const retryNameData = await generateSingleName(options, generatedNames, 5);
-        if (retryNameData && !generatedNames.some(existingName => 
-          isSimilarName(retryNameData.formal, existingName)
-        )) {
-          successCount++;
-          generatedNames.push(retryNameData.formal);
-          console.log(`重试成功生成第 ${i + 1} 个名字:`, retryNameData);
-          yield retryNameData;
-        } else {
-          console.error(`第 ${i + 1} 个名字重试也失败了`);
-        }
+        // 如果直接失败，添加短暂延迟后继续
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
       }
       
+      // 成功生成后添加延迟避免API限制
       const delay = 500 + (failedAttempts.length * 200);
       await new Promise(resolve => setTimeout(resolve, delay));
     } catch (error) {
-      console.error(`生成第 ${i + 1} 个名字时发生错误:`, error);
-      failedAttempts.push(i + 1);
-      yield null;
+      console.error(`生成第 ${successCount + 1} 个名字时发生错误:`, error);
+      failedAttempts.push(successCount + 1);
+      // 不再yield null，而是继续尝试
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
     }
   }
 
-  console.log(`名字生成完成，成功: ${successCount}，失败: ${failedAttempts.length}`);
+  // 输出生成结果统计
+  console.log(`名字生成完成，成功: ${successCount}，总尝试次数: ${attemptCount}`);
   console.log(`生成的所有名字: ${generatedNames.join(', ')}`);
   if (failedAttempts.length > 0) {
-    console.warn(`失败的序号：${failedAttempts.join(', ')}`);
+    console.warn(`失败的尝试序号：${failedAttempts.join(', ')}`);
   }
 }
