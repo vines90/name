@@ -189,7 +189,11 @@ function App() {
               {aiNames.map((nameData, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 
+                    animate-fadeInUp opacity-0"
+                  style={{
+                    animationDelay: `${index * 0.1}s`
+                  }}
                 >
                   <div className="p-6">
                     <div className="flex items-baseline mb-4">
