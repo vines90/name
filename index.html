@@ -3,121 +3,96 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/sparkles.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
-    <!-- 安全相关 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://api.createlab.com.cn; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;" />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=()" />
-    
-    <!-- 基本 SEO -->
-    <title>名字大师 - AI智能起名 | 免费宝宝取名 | 五行起名</title>
-    <meta name="description" content="名字大师是领先的AI智能起名工具，提供免费的宝宝取名服务。结合传统五行、生辰八字，运用AI技术为宝宝规划人生，提供独特、富有寓意的中文名字。支持性格分析、运势评估、出生年份匹配等多维度起名服务。" />
-    <meta name="keywords" content="起名,取名,宝宝起名,AI起名,智能起名,中文名字,五行起名,名字大师,免费起名,生辰八字,周易起名,宝宝取名,男孩起名,女孩起名" />
+    <!-- SEO Meta Tags -->
+    <title>名字大师 - AI智能起名 | 免费宝宝取名网站</title>
+    <meta name="description" content="名字大师是领先的AI智能起名工具，结合传统五行、生辰八字和现代命名学，为宝宝免费取名。支持单字名、双字名，考虑MBTI性格特点，提供完整的五行分析和名字释义。" />
+    <meta name="keywords" content="起名,取名,宝宝起名,AI起名,智能起名,免费起名,五行起名,八字起名,周易起名,在线起名" />
     <meta name="author" content="名字大师" />
+    <meta name="robots" content="index, follow" />
     
-    <!-- PWA 支持 -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="apple-mobile-web-app-title" content="名字大师" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://name.createlab.com.cn/" />
+    <meta property="og:title" content="名字大师 - AI智能起名 | 免费宝宝取名网站" />
+    <meta property="og:description" content="使用AI技术，结合传统文化与现代理念，为您的宝宝创造独特而美好的名字。提供完整的五行分析和名字释义。" />
+    <meta property="og:image" content="https://name.createlab.com.cn/og-image.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://name.createlab.com.cn/" />
+    <meta property="twitter:title" content="名字大师 - AI智能起名 | 免费宝宝取名网站" />
+    <meta property="twitter:description" content="使用AI技术，结合传统文化与现代理念，为您的宝宝创造独特而美好的名字。提供完整的五行分析和名字释义。" />
+    <meta property="twitter:image" content="https://name.createlab.com.cn/twitter-image.jpg" />
+
+    <!-- 移动应用支持 -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="名字大师" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
-    <meta name="msapplication-TileColor" content="#ffffff" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-    
-    <!-- 性能优化 -->
-    <link rel="preload" href="/fonts/your-main-font.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="modulepreload" href="/src/main.tsx" />
-    <meta http-equiv="Cache-Control" content="max-age=86400" />
+    <meta name="theme-color" content="#ffffff" />
     
     <!-- 搜索引擎验证 -->
-    <meta name="msvalidate.01" content="6CB4813A96C4C72FA2A385AA5628FEAC" />
-    <meta name="baidu-site-verification" content="codeva-9niFzY0QFq" />
-    <meta name="google-site-verification" content="mOH6BrXs4tS1RYX4NpT1gURfyELlD9GtSyh3C1412m8" />
+    <meta name="baidu-site-verification" content="your-baidu-code" />
+    <meta name="google-site-verification" content="your-google-code" />
     
-    <!-- Open Graph 标签 -->
-    <meta property="og:title" content="名字大师 - AI智能起名 | 免费宝宝取名" />
-    <meta property="og:description" content="使用AI技术，结合传统五行和生辰八字，为您的宝宝创造独特而美好的中文名字。提供免费的性格分析、运势评估和五行匹配服务。" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image.jpg" />
-    <meta property="og:url" content="https://name.createlab.com.cn/" />
-    <meta property="og:site_name" content="名字大师" />
-    <meta property="og:locale" content="zh_CN" />
-    <meta property="og:locale:alternate" content="en_US" />
-    
-    <!-- Twitter Card 标签 -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="名字大师 - AI智能起名 | 免费宝宝取名" />
-    <meta name="twitter:description" content="AI智能起名，结合传统五行，为宝宝规划人生。免费提供性格分析、运势评估等服务。" />
-    <meta name="twitter:image" content="/og-image.jpg" />
-    <meta name="twitter:creator" content="@YourTwitterHandle" />
-    
-    <!-- 无障碍支持 -->
-    <meta name="accessibility-check" content="WCAG2A" />
-    
-    <!-- 预连接关键域名 -->
-    <link rel="preconnect" href="https://api.createlab.com.cn" crossorigin />
-    <link rel="dns-prefetch" href="https://api.createlab.com.cn" />
-    
+    <!-- 安全策略 -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      connect-src 'self' https://www.dmxapi.com https://*.dmxapi.com;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      frame-src 'self';
+      worker-src 'self' blob:;
+    ">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=()" />
+
     <!-- 结构化数据 -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "名字大师",
-      "description": "AI智能起名工具，为宝宝提供独特而美好的中文名字",
-      "applicationCategory": "UtilityApplication",
-      "operatingSystem": "Web",
-      "url": "https://name.createlab.com.cn/",
-      "provider": {
-        "@type": "Organization",
-        "name": "CreateLab",
-        "url": "https://createlab.com.cn"
-      },
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "CNY"
-      },
-      "featureList": [
-        "AI智能起名",
-        "五行分析",
-        "寓意解释",
-        "性格特征分析",
-        "运势评估",
-        "生辰八字匹配",
-        "免费起名服务"
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "1250",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
-      "review": {
-        "@type": "Review",
-        "reviewRating": {
-          "@type": "Rating",
-          "ratingValue": "5",
-          "bestRating": "5"
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "名字大师",
+        "url": "https://name.createlab.com.cn",
+        "description": "AI智能起名工具，结合传统文化与现代理念，为宝宝创造独特而美好的名字。",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
         },
-        "author": {
-          "@type": "Person",
-          "name": "用户评价"
-        },
-        "reviewBody": "非常好用的起名工具，推荐给所有准父母！"
+        "featureList": [
+          "AI智能起名",
+          "五行分析",
+          "名字释义",
+          "MBTI性格匹配",
+          "免费使用"
+        ]
       }
-    }
     </script>
+
+    <!-- DNS 预取 -->
+    <link rel="dns-prefetch" href="//www.dmxapi.com" />
+    
+    <!-- 预连接 -->
+    <link rel="preconnect" href="https://www.dmxapi.com" />
+
+    <!-- 站点地图 -->
+    <link rel="sitemap" type="application/xml" href="https://name.createlab.com.cn/sitemap.xml" />
   </head>
   <body>
     <div id="root"></div>
-    <noscript>
-      <strong>很抱歉，名字大师需要启用 JavaScript 才能运行。请启用后刷新页面。</strong>
-    </noscript>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- 无障碍支持 -->
+    <noscript>
+      您需要启用 JavaScript 才能使用名字大师。
+    </noscript>
   </body>
 </html>

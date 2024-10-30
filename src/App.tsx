@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Sparkles, Copy } from 'lucide-react';
 import UserPreferences from './components/UserPreferences';
-import { generateAIName } from './utils/aiNameGenerator';
+import { generateNames } from './utils/aiNameGenerator';
+import { interpretName } from './utils/nameInterpreter';
 import { UserInputs } from './types';
+import NameCard from './components/NameCard';
 
 interface NameData {
   formal: string;
@@ -72,55 +74,80 @@ function App() {
   const [aiNames, setAiNames] = useState<NameData[]>([]);
   const [progress, setProgress] = useState(0);
   const [pinyinMap, setPinyinMap] = useState<Record<string, string>>({});
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [nameInterpretation, setNameInterpretation] = useState<NameData | null>(null);
+  const [isInterpreting, setIsInterpreting] = useState(false);
+  const [viewedNames, setViewedNames] = useState<Set<string>>(new Set());
 
   const handleInputChange = (newInputs: Partial<UserInputs>) => {
     const updatedInputs = { ...userInputs, ...newInputs };
     setUserInputs(updatedInputs);
   };
 
+  const handleNameClick = async (name: string) => {
+    setSelectedName(name);
+    setIsInterpreting(true);
+    
+    setViewedNames(prev => new Set(prev).add(name));
+    
+    try {
+      const interpretation = await interpretName(name, {
+        gender: userInputs.gender === 'neutral' ? 'male' : userInputs.gender,
+        birthYear: userInputs.birthYear,
+        mbti: userInputs.mbti,
+        preferredElements: userInputs.preferredElements
+      });
+      
+      if (interpretation) {
+        setNameInterpretation(interpretation);
+      }
+    } catch (error) {
+      console.error('解读名字失败：', error);
+    } finally {
+      setIsInterpreting(false);
+    }
+  };
+
   const handleAIGenerate = async () => {
     setIsGenerating(true);
     setError(null);
     setAiNames([]);
-    setPinyinMap({});
     setProgress(0);
 
-    const options = {
-      gender: userInputs.gender === 'neutral' ? 'male' : userInputs.gender,
-      surname: userInputs.surname,
-      nameLength: userInputs.nameLength || 2,
-      style: userInputs.nameInspiration || '文雅大方',
-      birthYear: userInputs.birthYear,
-      fatherName: userInputs.fatherName,
-      motherName: userInputs.motherName,
-      preferredElements: userInputs.preferredElements,
-      desiredProfession: userInputs.desiredProfession,
-      generation: userInputs.generation,
-      mbti: userInputs.mbti
-    };
-
-    let generatedCount = 0;
-    const tempNames: NameData[] = [];
-
     try {
-      for await (const nameData of generateAIName(options)) {
-        if (nameData) {
-          generatedCount++;
-          tempNames.push(nameData);
-          
-          setAiNames([...tempNames]);
-          setProgress(generatedCount * 5);
-          
-          const pinyin = await getPinyin(nameData.formal, options.surname);
-          setPinyinMap(prev => ({
-            ...prev,
-            [nameData.formal]: pinyin
-          }));
-        }
+      const names = await generateNames({
+        gender: userInputs.gender === 'neutral' ? 'male' : userInputs.gender,
+        surname: userInputs.surname,
+        nameLength: userInputs.nameLength || 2,
+        style: userInputs.nameInspiration || '文雅大方',
+        birthYear: userInputs.birthYear,
+        fatherName: userInputs.fatherName,
+        motherName: userInputs.motherName,
+        preferredElements: userInputs.preferredElements,
+        desiredProfession: userInputs.desiredProfession,
+        generation: userInputs.generation,
+        mbti: userInputs.mbti
+      });
+
+      if (names.length > 0) {
+        // 显示名字列表
+        setAiNames(names.map(name => ({
+          formal: name,
+          meaning: '点击查看详细解读',
+          nickname: '',
+          english: '',
+          origin: {
+            fiveElements: '',
+            allusion: '',
+            implication: ''
+          }
+        })));
+      } else {
+        throw new Error('未能生成名字');
       }
     } catch (error) {
       console.error('生成名字时出错:', error);
-      setError('部分名字生成失败，请重试。');
+      setError('生成名字失败，请重试。');
     } finally {
       setIsGenerating(false);
       setProgress(100);
@@ -182,74 +209,136 @@ function App() {
         {aiNames.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              即将为您推荐10个名字
+              即将为您推荐20个名字
               {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在取名中...）</span>}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aiNames.map((nameData, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 
-                    animate-fadeInUp opacity-0"
-                  style={{
-                    animationDelay: `${index * 0.1}s`
-                  }}
-                >
-                  <div className="p-6">
-                    <div className="flex items-baseline mb-4">
-                      <div className="text-3xl font-bold text-gray-800 text-left">
+              {aiNames.map((nameData, index) => {
+                const isViewed = viewedNames.has(nameData.formal);
+                
+                return (
+                  <div
+                    key={index}
+                    className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer
+                      ${isViewed ? 'border-2 border-purple-300' : ''}
+                    `}
+                    onClick={() => handleNameClick(nameData.formal)}
+                  >
+                    <div className="p-6">
+                      <div className="text-3xl font-bold text-gray-800 text-center mb-4">
                         {nameData.formal}
                       </div>
-                      <div className="ml-3 text-sm text-gray-400 font-serif italic">
-                        {pinyinMap[nameData.formal]}
+                      <div className="text-sm text-center">
+                        {isViewed ? (
+                          <span className="text-purple-500">已查看详细解读</span>
+                        ) : (
+                          <span className="text-gray-500">点击查看详细解读</span>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="text-sm text-gray-600 mb-4">
-                      {nameData.meaning}
-                    </div>
-                    
-                    <div className="flex justify-between text-sm mb-4">
-                      <div className="text-gray-500">
-                        <span className="font-medium">小名：</span>
-                        {nameData.nickname}
-                      </div>
-                      <div className="text-gray-500">
-                        <span className="font-medium">英文名：</span>
-                        {nameData.english}
-                      </div>
-                    </div>
-                    
-                    <div className="border-t border-gray-100 pt-4 mt-4">
-                      <div className="text-xs text-gray-500 mb-2">
-                        <span className="font-medium">五行运势：</span>
-                        {nameData.origin.fiveElements}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        <span className="font-medium">典故：</span>
-                        {nameData.origin.allusion}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        <span className="font-medium">寓意：</span>
-                        {nameData.origin.implication}
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={() => copyToClipboard(nameData.formal)}
-                      className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm text-gray-600 
-                        hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      复制完整名字
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
+
+      {/* 名字解读弹窗 */}
+      {selectedName && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          style={{
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+            style={{
+              animation: 'slideIn 0.3s ease-out'
+            }}
+          >
+            {isInterpreting ? (
+              // 加载动画
+              <div className="p-12 flex flex-col items-center justify-center">
+                <div className="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-600">正在解读名字的寓意...</p>
+              </div>
+            ) : nameInterpretation ? (
+              // 名字解读内容
+              <>
+                {/* 关闭按钮 */}
+                <button
+                  onClick={() => {
+                    setSelectedName(null);
+                    setNameInterpretation(null);
+                  }}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                >
+                  ✕
+                </button>
+
+                <div className="p-6 animate-fadeIn">
+                  {/* 大名 */}
+                  <div className="text-center mb-6">
+                    <h3 className="text-3xl font-bold text-gray-800">
+                      {typeof nameInterpretation.formal === 'string' ? nameInterpretation.formal : ''}
+                    </h3>
+                  </div>
+
+                  {/* 昵称和英文名 */}
+                  <div className="flex justify-between mb-6">
+                    <div className="text-center flex-1">
+                      <div className="text-sm text-gray-500 mb-1">昵称</div>
+                      <div className="text-lg font-medium text-gray-700">
+                        {typeof nameInterpretation.nickname === 'string' ? nameInterpretation.nickname : ''}
+                      </div>
+                    </div>
+                    <div className="text-center flex-1">
+                      <div className="text-sm text-gray-500 mb-1">英文名</div>
+                      <div className="text-lg font-medium text-gray-700">
+                        {typeof nameInterpretation.english === 'string' ? nameInterpretation.english : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 名字释义 */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">名字释义</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {typeof nameInterpretation.meaning === 'string' ? nameInterpretation.meaning : ''}
+                    </p>
+                  </div>
+
+                  {/* 五行分析 */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">五行分析</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {typeof nameInterpretation.origin.fiveElements === 'string' ? nameInterpretation.origin.fiveElements : ''}
+                    </p>
+                  </div>
+
+                  {/* 典故 */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">典故出处</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {typeof nameInterpretation.origin.allusion === 'string' ? nameInterpretation.origin.allusion : ''}
+                    </p>
+                  </div>
+
+                  {/* 寓意 */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">深层寓意</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {typeof nameInterpretation.origin.implication === 'string' ? nameInterpretation.origin.implication : ''}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

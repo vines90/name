@@ -17,7 +17,7 @@ const typeLabels = {
 
 const NameCard: React.FC<NameCardProps> = ({ type, name, surname = '', onRegenerate }) => {
   const fullName = type === 'formal' ? `${surname}${name}` : name;
-  const meaning = type === 'formal' ? getNameMeaning(name, surname) : '';
+  const meaning = type === 'formal' ? getNameMeaning(name) : '';
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
