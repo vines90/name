@@ -1,48 +1,29 @@
 import React from 'react';
-import { RefreshCcw } from 'lucide-react';
-import { getNameMeaning } from '../utils/nameMeanings';
+import { NameData } from '../types';
 
 interface NameCardProps {
-  type: 'formal' | 'nickname' | 'english';
-  name: string;
-  surname?: string;
-  onRegenerate: () => void;
+  nameData: NameData;
+  isViewed: boolean;
+  onClick: (name: string) => void;
 }
 
-const typeLabels = {
-  formal: '正式名字',
-  nickname: '昵称',
-  english: '英文名'
-};
-
-const NameCard: React.FC<NameCardProps> = ({ type, name, surname = '', onRegenerate }) => {
-  const fullName = type === 'formal' ? `${surname}${name}` : name;
-  const meaning = type === 'formal' ? getNameMeaning(name) : '';
-
+const NameCard: React.FC<NameCardProps> = ({ nameData, isViewed, onClick }) => {
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+    <div
+      className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer
+        ${isViewed ? 'border-2 border-purple-300' : ''}
+      `}
+      onClick={() => onClick(nameData.formal)}
+    >
       <div className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-600">
-            {typeLabels[type]}
-          </h3>
-          <button
-            onClick={onRegenerate}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            title="重新生成"
-          >
-            <RefreshCcw className="w-5 h-5 text-gray-500" />
-          </button>
+        <div className="text-3xl font-bold text-gray-800 text-center mb-4">
+          {nameData.formal}
         </div>
-        
-        <div className="text-center">
-          <div className="text-3xl font-bold text-gray-800 mb-2">
-            {fullName}
-          </div>
-          {meaning && (
-            <div className="text-sm text-gray-500 mt-2">
-              {meaning}
-            </div>
+        <div className="text-sm text-center">
+          {isViewed ? (
+            <span className="text-purple-500">已查看详细解读</span>
+          ) : (
+            <span className="text-gray-500">点击查看详细解读</span>
           )}
         </div>
       </div>

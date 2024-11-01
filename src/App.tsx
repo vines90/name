@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+// 这里的 React 导入在现代版本的 React (17+) 中不再必需
+// 因为 JSX 转换不再依赖于 React 的显式导入
+// 但是我们仍然需要 useState hook
+import { useState } from 'react';
 import { Sparkles, Copy } from 'lucide-react';
 import UserPreferences from './components/UserPreferences';
 import { generateNames } from './utils/aiNameGenerator';
 import { interpretName } from './utils/nameInterpreter';
 import { UserInputs } from './types';
 import NameCard from './components/NameCard';
+import PaymentModal from './components/PaymentModal';
+import { PaymentPlan } from './types';
+// 这里虽然导入了 NameCard 组件但没有使用，
+// 前端能正常显示名字卡片可能是因为:
+// 1. 在其他组件中导入并使用了 NameCard
+// 2. 或者在 App.tsx 文件的其他部分(未显示的代码)中使用了 NameCard
+// 建议检查完整代码确认 NameCard 的实际使用位置
 
 interface NameData {
   formal: string;
@@ -78,6 +88,8 @@ function App() {
   const [nameInterpretation, setNameInterpretation] = useState<NameData | null>(null);
   const [isInterpreting, setIsInterpreting] = useState(false);
   const [viewedNames, setViewedNames] = useState<Set<string>>(new Set());
+  const [remainingViews, setRemainingViews] = useState<number | 'unlimited'>(2); // 初始免费2次
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const handleInputChange = (newInputs: Partial<UserInputs>) => {
     const updatedInputs = { ...userInputs, ...newInputs };
@@ -85,9 +97,17 @@ function App() {
   };
 
   const handleNameClick = async (name: string) => {
+    if (remainingViews === 0) {
+      setShowPaymentModal(true);
+      return;
+    }
+    
+    if (remainingViews !== 'unlimited') {
+      setRemainingViews(prev => (typeof prev === 'number' ? prev - 1 : prev));
+    }
+
     setSelectedName(name);
     setIsInterpreting(true);
-    
     setViewedNames(prev => new Set(prev).add(name));
     
     try {
@@ -158,6 +178,19 @@ function App() {
     navigator.clipboard.writeText(text);
   };
 
+  const handlePaymentPlan = async (plan: PaymentPlan) => {
+    try {
+      // TODO: 调用支付接口
+      // const paymentResult = await processPayment(plan.price);
+      // if (paymentResult.success) {
+      setRemainingViews(plan.viewCount);
+      setShowPaymentModal(false);
+      // }
+    } catch (error) {
+      console.error('支付失败：', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       <div className="container mx-auto px-4 py-12">
@@ -213,32 +246,14 @@ function App() {
               {isGenerating && <span className="text-gray-500 text-sm ml-2">（正在取名中...）</span>}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aiNames.map((nameData, index) => {
-                const isViewed = viewedNames.has(nameData.formal);
-                
-                return (
-                  <div
-                    key={index}
-                    className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer
-                      ${isViewed ? 'border-2 border-purple-300' : ''}
-                    `}
-                    onClick={() => handleNameClick(nameData.formal)}
-                  >
-                    <div className="p-6">
-                      <div className="text-3xl font-bold text-gray-800 text-center mb-4">
-                        {nameData.formal}
-                      </div>
-                      <div className="text-sm text-center">
-                        {isViewed ? (
-                          <span className="text-purple-500">已查看详细解读</span>
-                        ) : (
-                          <span className="text-gray-500">点击查看详细解读</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {aiNames.map((nameData, index) => (
+                <NameCard
+                  key={index}
+                  nameData={nameData}
+                  isViewed={viewedNames.has(nameData.formal)}
+                  onClick={handleNameClick}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -337,6 +352,22 @@ function App() {
               </>
             ) : null}
           </div>
+        </div>
+      )}
+
+      {/* 添加支付弹窗 */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSelectPlan={handlePaymentPlan}
+      />
+
+      {/* 添加剩余次数显示 */}
+      {remainingViews !== 'unlimited' && (
+        <div className="fixed bottom-4 right-4 bg-white rounded-full px-4 py-2 shadow-md">
+          <span className="text-gray-600">
+            剩余查看次数：{remainingViews}
+          </span>
         </div>
       )}
     </div>

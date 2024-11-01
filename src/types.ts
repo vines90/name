@@ -20,3 +20,28 @@ export interface CardConfig {
   description: string;
   gradient: string;
 }
+
+export interface NameData {
+  formal: string;
+  meaning: string;
+  nickname: string;
+  english: string;
+  origin: {
+    fiveElements: string;
+    allusion: string;
+    implication: string;
+  };
+}
+
+export interface PaymentPlan {
+  id: string;
+  price: number;
+  viewCount: number | 'unlimited';
+  description: string;
+}
+
+export interface PaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectPlan: (plan: PaymentPlan) => void;
+}
